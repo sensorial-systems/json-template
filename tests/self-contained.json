@@ -1,0 +1,10 @@
+{
+    "data": {
+        "name": "Danilo",
+        "age": 36
+    },
+    "name": "{data.name}",
+    "age": "{data.age}",
+    "info": "{data.name} is {string:data.age} years old.",
+    "age_str": "{string:data.age}"
+}
