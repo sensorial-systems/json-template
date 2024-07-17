@@ -5,15 +5,26 @@ use std::path::PathBuf;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-use crate::{GetDot, Json, Placeholder, ToDeserializable};
+use crate::{Functions, GetDot, Json, Placeholder, ToDeserializable};
 
 /// A template.
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct Template {
     /// JSON data.
     pub data: Json,
     /// Directory.
-    pub directory: Option<PathBuf>
+    pub directory: Option<PathBuf>,
+    /// Functions.
+    pub functions: Functions
+}
+
+impl Default for Template {
+    fn default() -> Self {
+        let data = Default::default();
+        let directory = Default::default();
+        let functions = Default::default();
+        Self { data, directory, functions }        
+    }
 }
 
 impl Template {
@@ -78,41 +89,27 @@ impl Template {
         }
         let value = serde_json::from_str::<Value>(&value)?;
         let mut value = Json::from(value);
-        value.resolve_files(&self.clone())?;
+        value.resolve_files(&self.clone())?; // TODO: Why do we have to resolve_files before add_data? Answer: Because unresolved placeholders will be overridden by add_data
         self.add_data(value.into());
-        self.data.resolve_placeholders(&self.clone())?;
+        self.data.resolve_placeholders(&self.clone())?; // TODO: Unify resolve_placeholders with resolve_files by making a chain resolver (allow placeholder to point to a placeholder)
         Ok(serde_json::from_value(serde_json::Value::from(self.data))?)
     }
     
     /// Resolve the placeholder.
     pub fn resolve(&self, placeholder: &Placeholder) -> Option<Value> {
-        let (is_file, is_str) = placeholder
-            .type_
-            .as_ref()
-            .map(|type_| (type_ == "file", type_ == "string"))
-            .unwrap_or((false, false));
-        if is_file {
+        if let Some(type_) = placeholder.type_.as_ref() {
             self
-            .directory
-            .as_ref()
-            .map(|directory| directory.join(placeholder.path()))
-            .and_then(|path| Template::new().deserialize::<Value>(path).ok())
+                .functions
+                .get(type_)
+                .and_then(|function| function(self, placeholder))
         } else {
-            self.data.value.get_dot(placeholder.path()).cloned().map(|value| {
-                if is_str {
-                    Value::String(Json::from(value).to_string())
-                } else {
-                    value
-                }
-            })    
+            self.data.value.get_dot(placeholder.path()).cloned()
         }
     }
 }
 
 impl From<serde_json::Value> for Template {
     fn from(data: serde_json::Value) -> Self {
-        let data = Json::from(data);
-        let directory = None;
-        Self { data, directory }
+        Template::new().with_data(data)
     }
 }
