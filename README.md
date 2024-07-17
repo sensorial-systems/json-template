@@ -1,11 +1,11 @@
-# serde_json_placeholders
+# json-template
 
-`serde_json_placeholders` is a library that allows you to use placeholders in your JSON files.
+`json-template` is a library that allows you to use placeholders in your JSON files.
 
 ## Example
 
 ```rust
-use serde_json_placeholders::*;
+use json_template::*;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -13,7 +13,8 @@ pub struct Data {
    name: String,
    age: usize,
    age_str: String,
-   info: String
+   info: String,
+   time: String
 }
 
 let json = r#"{
@@ -24,14 +25,22 @@ let json = r#"{
   "name": "{data.name}",
   "age": "{data.age}",
   "age_str": "{string:data.age}",
-  "info": "{data.name} is {data.age} years old."
+  "info": "{data.name} is {data.age} years old.",
+  "time": "{data.time}"
 }"#;
-let data: Data = from_str(json).unwrap();
+let data: Data = Template::new()
+   .with_data(serde_json::json!({
+      "data": {
+         "time": "now"
+      }
+   }))
+   .deserialize(json).unwrap();
 assert_eq!(data, Data {
-   name: "Danilo".to_string(),
+   name: "Danilo".into(),
    age: 36,
-   age_str: "36".to_string(),
-   info: "Danilo is 36 years old.".to_string()
+   age_str: "36".into(),
+   info: "Danilo is 36 years old.".into(),
+   time: "now".into()
 })
 ```
 
@@ -48,7 +57,7 @@ Even though `"{string:data.name} is {string:data.age} years old."` would work, i
 ## Example with file references
 
 ```rust
-use serde_json_placeholders::*;
+use json_template::*;
 use serde::{Serialize, Deserialize};
 use std::path::PathBuf;
 
@@ -57,7 +66,8 @@ pub struct Data {
    name: String,
    age: usize,
    age_str: String,
-   info: String
+   info: String,
+   time: String
 }
 
 let json = r#"{
@@ -65,23 +75,34 @@ let json = r#"{
   "name": "{data.name}",
   "age": "{data.age}",
   "age_str": "{string:data.age}",
-  "info": "{data.name} is {data.age} years old."
+  "info": "{data.name} is {data.age} years old.",
+  "time": "{data.time}"
 }"#;
+
 let directory = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-let directory = Some(directory.as_path());
-let data: Data = from_str_with_dir(json, directory).unwrap();
+let template = Template::new()
+   .with_data(serde_json::json!({
+      "data": {
+         "time": "now"
+      }
+   }))
+   .with_directory(Some(directory));
+
+let data: Data = template.deserialize(json).unwrap();
+
 assert_eq!(data, Data {
-   name: "Danilo".to_string(),
+   name: "Danilo".into(),
    age: 36,
-   age_str: "36".to_string(),
-   info: "Danilo is 36 years old.".to_string()
+   age_str: "36".into(),
+   info: "Danilo is 36 years old.".into(),
+   time: "now".into()
 })
 ```
 
 or simply
 
 ```rust
-use serde_json_placeholders::*;
+use json_template::*;
 use serde::{Serialize, Deserialize};
 use std::path::PathBuf;
 
@@ -90,17 +111,27 @@ pub struct Data {
    name: String,
    age: usize,
    age_str: String,
-   info: String
+   info: String,
+   time: String
 }
 
 let file = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
     .join("tests")
-    .join("file-reference.json");
-let data: Data = from_file(file).unwrap();
+    .join("data-from-file.json");
+
+let data: Data = Template::new()
+   .with_data(serde_json::json!({
+      "data": {
+         "time": "now"
+      }
+   }))
+   .deserialize(file).unwrap();
+
 assert_eq!(data, Data {
-   name: "Danilo".to_string(),
+   name: "Danilo".into(),
    age: 36,
-   age_str: "36".to_string(),
-   info: "Danilo is 36 years old.".to_string()
+   age_str: "36".into(),
+   info: "Danilo is 36 years old.".into(),
+   time: "now".into()
 })
 ```

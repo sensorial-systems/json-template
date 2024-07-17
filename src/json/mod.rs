@@ -3,10 +3,10 @@
 use regex::Regex;
 use serde_json::Value;
 
-use crate::{Context, Placeholder};
+use crate::{Template, Placeholder};
 
 /// A JSON value.
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct Json {
     /// The JSON value.
     pub value: serde_json::Value
@@ -35,7 +35,7 @@ impl Json {
     }
 
     /// Resolve file placeholders in the JSON value.
-    pub fn resolve_files(&mut self, context: &Context) -> serde_json::Result<()> {
+    pub fn resolve_files(&mut self, context: &Template) -> serde_json::Result<()> {
         let json = &mut self.value;
         if let Some(object) = json.as_object_mut() {
             for value in object.values_mut() {
@@ -53,8 +53,62 @@ impl Json {
         Ok(())
     }
 
+    pub(crate) fn add_recursive(value: &mut Value, new_value: Value) {
+        match value {
+            Value::Object(map) => {
+                if let Value::Object(new_map) = new_value {
+                    for (key, new_value) in new_map {
+                        if let Some(value) = map.get_mut(&key) {
+                            Self::add_recursive(value, new_value);
+                        } else {
+                            map.insert(key, new_value);
+                        }
+                    }
+                }
+            }
+            Value::Array(array) => {
+                if let Value::Array(new_array) = new_value {
+                    for new_value in new_array.into_iter() {
+                        array.push(new_value);
+                    }
+                }
+            }
+            _ => *value = new_value
+        }
+    
+    }
+
+    pub(crate) fn override_value_recursive(value: &mut Value, new_value: Value) {
+        match value {
+            Value::Object(map) => {
+                if let Value::Object(new_map) = new_value {
+                    for (key, new_value) in new_map {
+                        if let Some(value) = map.get_mut(&key) {
+                            Self::override_value_recursive(value, new_value);
+                        } else {
+                            map.insert(key, new_value);
+                        }
+                    }
+                }
+            }
+            Value::Array(array) => {
+                if let Value::Array(new_array) = new_value {
+                    for (index, new_value) in new_array.into_iter().enumerate() {
+                        if let Some(value) = array.get_mut(index) {
+                            Self::override_value_recursive(value, new_value);
+                        } else {
+                            array.push(new_value);
+                        }
+                    }
+                }
+            }
+            _ => *value = new_value
+        }
+    
+    }    
+
     /// Resolve placeholders in the JSON value.
-    pub fn resolve_placeholders(&mut self, context: &Context) -> serde_json::Result<()> {
+    pub fn resolve_placeholders(&mut self, context: &Template) -> serde_json::Result<()> {
         let json = &mut self.value;
         if let Some(object) = json.as_object_mut() {
             for value in object.values_mut() {

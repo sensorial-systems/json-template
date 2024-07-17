@@ -1,14 +1,14 @@
 [package]
-name = "serde_json_placeholders"
+name = "json-template"
 version = "0.9.0"
 edition = "2021"
-description = "A simple library to replace placeholders in JSON strings."
+description = "A simple library for creating JSON templates."
 license = "Apache-2.0"
-repository = "https://github.com/sensorial-systems/serde_json_placeholders"
+repository = "https://github.com/sensorial-systems/json-template"
 readme = "README.md"
-keywords = ["serde", "json", "placeholders"]
+keywords = ["serde", "json", "template"]
 authors = ["Danilo Guanabara <danilo@sensorial.systems>"]
-documentation = "https://docs.rs/serde_json_placeholders"
+documentation = "https://docs.rs/json-template"
 homepage = "https://sensorial.systems"
 
 [dependencies]
