@@ -1,3 +1,5 @@
+[![](https://dcbadge.vercel.app/api/server/rzaesS82MT)](https://discord.gg/rzaesS82MT)
+
 # json-template
 
 `json-template` is a library that allows you to use placeholders in your JSON files.

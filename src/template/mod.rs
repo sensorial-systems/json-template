@@ -86,7 +86,12 @@ impl Template {
     
     /// Resolve the placeholder.
     pub fn resolve(&self, placeholder: &Placeholder) -> Option<Value> {
-        if placeholder.is_file {
+        let (is_file, is_str) = placeholder
+            .type_
+            .as_ref()
+            .map(|type_| (type_ == "file", type_ == "string"))
+            .unwrap_or((false, false));
+        if is_file {
             self
             .directory
             .as_ref()
@@ -94,7 +99,7 @@ impl Template {
             .and_then(|path| Template::new().deserialize::<Value>(path).ok())
         } else {
             self.data.value.get_dot(placeholder.path()).cloned().map(|value| {
-                if placeholder.is_str {
+                if is_str {
                     Value::String(Json::from(value).to_string())
                 } else {
                     value

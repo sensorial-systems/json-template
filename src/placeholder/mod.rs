@@ -4,10 +4,8 @@
 pub struct Placeholder {
     /// The placeholder value.
     pub value: String,
-    /// Whether the placeholder is a string.
-    pub is_str: bool,
-    /// Whether the placeholder is a file.
-    pub is_file: bool,
+    /// The placeholder type.
+    pub type_: Option<String>,
 }
 
 impl Placeholder {
@@ -15,9 +13,8 @@ impl Placeholder {
     pub fn from(value: &str) -> Option<Self> {
         if value.starts_with('{') && value.ends_with('}') {
             let value = value.to_string();
-            let is_str = value.starts_with("{string:");
-            let is_file = value.starts_with("{file:");
-            Some(Self { value, is_str, is_file })
+            let type_ = value.find(':').map(|index| value[1 .. index].to_string());
+            Some(Self { value, type_ })
         } else {
             None
         }
@@ -25,10 +22,8 @@ impl Placeholder {
 
     /// Get the path of the placeholder.
     pub fn path(&self) -> &str {
-        if self.is_str {
-            &self.value[8 .. self.value.len() - 1]
-        } else if self.is_file {
-            &self.value[6 .. self.value.len() - 1]
+        if let Some(type_) = &self.type_ {
+            &self.value[type_.len() + 2 .. self.value.len() - 1]
         } else {
             &self.value[1 .. self.value.len() - 1]
         }

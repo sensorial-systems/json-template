@@ -41,7 +41,8 @@ impl Json {
             for value in object.values_mut() {
                 if let Some(string) = value.as_str() {
                     if let Some(placeholder) = Placeholder::from(string) {
-                        if placeholder.is_file {
+                        let is_file = placeholder.type_.as_ref().map(|type_| type_ == "file").unwrap_or(false);
+                        if is_file {
                             if let Some(new_value) = context.resolve(&placeholder) {
                                 *value = new_value;
                             }
