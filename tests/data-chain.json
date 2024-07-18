@@ -1,0 +1,5 @@
+{
+    "my": "Danilo",
+    "name": "{my}",
+    "is": "{name}"
+}

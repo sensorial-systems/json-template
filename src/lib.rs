@@ -4,11 +4,13 @@
 mod traits;
 mod placeholder;
 mod json;
-mod template;
+mod deserializer;
 pub mod functions;
+pub mod context;
 
 use traits::*;
 use placeholder::*;
 use json::*;
 pub use functions::*;
-pub use template::*;
+pub use deserializer::*;
+pub use context::*;

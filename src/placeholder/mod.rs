@@ -1,6 +1,11 @@
 //! Placeholder module.
 
+use serde_json::Value;
+
+use crate::Json;
+
 /// This struct represents a placeholder in a JSON object.
+#[derive(Debug, Clone)]
 pub struct Placeholder {
     /// The placeholder value.
     pub value: String,
@@ -10,7 +15,7 @@ pub struct Placeholder {
 
 impl Placeholder {
     /// Create a new placeholder from a string.
-    pub fn from(value: &str) -> Option<Self> {
+    pub fn from_str(value: &str) -> Option<Self> {
         if value.starts_with('{') && value.ends_with('}') {
             let value = value.to_string();
             let type_ = value.find(':').map(|index| value[1 .. index].to_string());
@@ -18,6 +23,11 @@ impl Placeholder {
         } else {
             None
         }
+    }
+
+    /// Create a new placeholder from a Value.
+    pub fn from_value(value: &Value) -> Option<Self> {
+        Self::from_str(&Json::from(value.clone()).to_string())
     }
 
     /// Get the path of the placeholder.

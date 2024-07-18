@@ -2,9 +2,62 @@
 
 # json-template
 
-`json-template` is a library that allows you to use placeholders in your JSON files.
+`json-template` is a library that allows you to create JSON templates.
 
-## Example
+[file.json]
+```json
+{
+   "personal_info": "{file:additional.json}",
+   "info": "{personal_info.name} {personal_info.last_name} is {personal_info.age} years old"
+}
+```
+
+[additional.json]
+```json
+{
+   "name": "Danilo",
+   "last_name": "Guanabara",
+   "age": 36
+}
+```
+
+Can be rendered to
+```json
+{
+   "personal_info": {
+      "age": 36,
+      "name": "Danilo",
+      "last_name": "Guanabara"
+   },
+   "info": "Danilo Guanabara is 36 years old"
+}
+```
+
+## Functionalities
+
+### Chained resolver
+```json
+{
+   "my": "Danilo",
+   "name": "{my}",
+   "is": "{name}
+}
+```
+
+### Functions
+
+#### Built-in functions
+
+| Function | Description |
+|----------|-------------|
+| `{file:path}`|Loads a file from a relative path. Its base directory is automatically set if you deserialize a file. You can also set it manually using `Context::set_directory`.|
+|`{string:path}`| Transforms a `serde_json::Value` to `serde_json::Value::String`. It's useful if you need to deserialize a Number as a String.
+
+Check `Custom Functions` code example to learn how to create a custom function.
+
+## Code examples
+
+### From memory
 
 ```rust
 use json_template::*;
@@ -30,13 +83,13 @@ let json = r#"{
   "info": "{data.name} is {data.age} years old.",
   "time": "{data.time}"
 }"#;
-let data: Data = Template::new()
+let context = Context::new()
    .with_data(serde_json::json!({
       "data": {
          "time": "now"
       }
-   }))
-   .deserialize(json).unwrap();
+   }));
+let data: Data = Deserializer::new().deserialize_with_context(json, &context).unwrap();
 assert_eq!(data, Data {
    name: "Danilo".into(),
    age: 36,
@@ -56,7 +109,7 @@ Formatted placeholders like `"{data.name} is {data.age} years old."` are replace
 
 Even though `"{string:data.name} is {string:data.age} years old."` would work, it is not necessary.
 
-## Example with file references
+### From file
 
 ```rust
 use json_template::*;
@@ -82,7 +135,7 @@ let json = r#"{
 }"#;
 
 let directory = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-let template = Template::new()
+let context = Context::new()
    .with_data(serde_json::json!({
       "data": {
          "time": "now"
@@ -90,7 +143,7 @@ let template = Template::new()
    }))
    .with_directory(Some(directory));
 
-let data: Data = template.deserialize(json).unwrap();
+let data: Data = Deserializer::new().deserialize_with_context(json, &context).unwrap();
 
 assert_eq!(data, Data {
    name: "Danilo".into(),
@@ -120,14 +173,14 @@ pub struct Data {
 let file = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
     .join("tests")
     .join("data-from-file.json");
-
-let data: Data = Template::new()
+let context = Context::new()
    .with_data(serde_json::json!({
       "data": {
          "time": "now"
       }
-   }))
-   .deserialize(file).unwrap();
+   }));
+
+let data: Data = Deserializer::new().deserialize_with_context(file, &context).unwrap();
 
 assert_eq!(data, Data {
    name: "Danilo".into(),
@@ -136,4 +189,31 @@ assert_eq!(data, Data {
    info: "Danilo is 36 years old.".into(),
    time: "now".into()
 })
+```
+
+### Custom functions
+
+```rust
+use json_template::*;
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+struct Time {
+   duration: std::time::Duration
+}
+
+let value = serde_json::json!({ "duration": "{time:5}" });
+
+let context = Context::new().with_function("time", |_deserializer, _context, placeholder| {
+   let seconds = placeholder
+      .path()
+      .parse::<u64>()
+      .map_err(|e| serde::de::Error::custom(e))?;
+   let duration = std::time::Duration::from_secs(seconds);
+   serde_json::to_value(&duration)
+});
+
+let data: Time = Deserializer::new().deserialize_with_context(value, &context).expect("Failed to deserialize");
+
+assert_eq!(data.duration, std::time::Duration::from_secs(5));
 ```
