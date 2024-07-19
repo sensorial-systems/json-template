@@ -5,10 +5,12 @@ mod traits;
 mod placeholder;
 mod json;
 mod deserializer;
+pub mod path;
 pub mod functions;
 pub mod context;
 
 use traits::*;
+pub use path::*;
 pub use placeholder::*;
 pub use json::*;
 pub use functions::*;

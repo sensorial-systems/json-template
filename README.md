@@ -44,6 +44,13 @@ Can be rendered to
 }
 ```
 
+### Every path segment is a placeholder
+```json
+{
+   "data": "{{file:data.json}.property}
+}
+```
+
 ### Functions
 
 #### Built-in functions
@@ -210,6 +217,7 @@ let value = serde_json::json!({ "duration": "{time:5}" });
 let context = Context::new().with_function("time", |_deserializer, _context, placeholder| {
    let seconds = placeholder
       .path()
+      .str()
       .parse::<u64>()
       .map_err(|e| serde::de::Error::custom(e))?;
    let duration = std::time::Duration::from_secs(seconds);

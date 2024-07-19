@@ -25,7 +25,7 @@ impl Deserializer {
     pub fn deserialize_with_context<T: DeserializeOwned>(&self, value: impl ToDeserializable, context: &Context) -> serde_json::Result<T> {
         let mut context = context.clone();
         let (directory, value) = value.to_deserializable()?;
-        if let Some(directory) = directory {
+        if let (Some(directory), None) = (directory, &context.directory) {
             context.set_directory(Some(directory));
         }
         context.set_current_data(value.clone());

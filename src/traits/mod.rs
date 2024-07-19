@@ -4,34 +4,28 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 
-use crate::{Context, Deserializer};
+use crate::{Context, Deserializer, Path, Placeholder};
 
 /// This trait provides a method to get a value from a JSON object using a dot-separated path.
 pub trait GetDot {
-    /// Get a value from a JSON object using a dot-separated path.
-    // fn get_dot(&self, path: &str) -> Option<&Value>;
-
     /// Get a value from a JSON object using a dot-separated path, deserializing each segment if needed.
-    fn get_dot_deserializing(&self, path: &str, deserializer: &Deserializer, context: &Context) -> serde_json::Result<Value>;
+    fn get_dot_deserializing(&self, path: Path, deserializer: &Deserializer, context: &Context) -> serde_json::Result<Value>;
 }
 
 impl GetDot for Value {
-    // fn get_dot(&self, path: &str) -> Option<&Value> {
-    //     path
-    //         .split(".")
-    //         .fold(Some(self), |acc, segment|
-    //             acc?.get(segment)
-    //         )
-    // }
-
-    fn get_dot_deserializing(&self, path: &str, deserializer: &Deserializer, context: &Context) -> serde_json::Result<Value> {
+    fn get_dot_deserializing(&self, path: Path, deserializer: &Deserializer, context: &Context) -> serde_json::Result<Value> {
         path
-            .split(".")
-            .fold(Ok(self.clone()), |acc, segment|
-                acc?.get(segment)
-                    .ok_or_else(|| serde::de::Error::custom(format!("Path not found: {}", path)))
-                    .and_then(|value| deserializer.resolve_value(value, context))
-            )
+            .segments()
+            .iter()
+            .fold(Ok(self.clone()), |acc, segment| {
+                if let Some(placeholder) = Placeholder::from_str(segment) {
+                    deserializer.resolve_placeholder(&placeholder, context)
+                } else {
+                    acc?.get(segment)
+                        .ok_or_else(|| serde::de::Error::custom(format!("Path not found: {}", path.str())))
+                        .and_then(|value| deserializer.resolve_value(value, context))
+                }
+            })
     }
 }
 

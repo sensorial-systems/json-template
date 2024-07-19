@@ -1,5 +1,7 @@
 //! Placeholder module.
 
+use crate::Path;
+
 /// This struct represents a placeholder in a JSON object.
 #[derive(Debug, Clone)]
 pub struct Placeholder {
@@ -47,7 +49,16 @@ impl Placeholder {
     pub fn from_str(value: &str) -> Option<Self> {
         if value.starts_with('{') && value.ends_with('}') {
             let value = value.to_string();
-            let type_ = value.find(':').map(|index| value[1 .. index].to_string());
+            let chars = value.chars();
+            let first = chars.clone().nth(0);
+            let second = chars.clone().nth(1);
+            let type_ = first.zip(second).map(|(first, second)| {
+                if first == '{' && second.is_alphanumeric() {
+                    value.find(':').map(|index| value[1 .. index].to_string())
+                } else {
+                    None
+                }
+            }).flatten();
             Some(Self { value, type_ })
         } else {
             None
@@ -55,11 +66,11 @@ impl Placeholder {
     }
 
     /// Get the path of the placeholder.
-    pub fn path(&self) -> &str {
+    pub fn path(&self) -> Path {
         if let Some(type_) = &self.type_ {
-            &self.value[type_.len() + 2 .. self.value.len() - 1]
+            Path::new(&self.value[type_.len() + 2 .. self.value.len() - 1])
         } else {
-            &self.value[1 .. self.value.len() - 1]
+            Path::new(&self.value[1 .. self.value.len() - 1])
         }
     }
 }

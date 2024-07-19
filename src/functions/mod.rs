@@ -13,21 +13,25 @@ pub struct Functions {
     registry: HashMap<String, Rc<dyn Fn(&Deserializer, &Context, &Placeholder) -> serde_json::Result<Value>>>
 }
 
+/// Transforms everything into a string.
 fn string(deserializer: &Deserializer, context: &Context, placeholder: &Placeholder) -> serde_json::Result<Value> {
     context.find(deserializer, placeholder).map(|value| Value::String(value.to_string()))
 }
 
+/// Reads a file.
 fn file(deserializer: &Deserializer, context: &Context, placeholder: &Placeholder) -> serde_json::Result<Value> {
     context
         .directory
         .as_ref()
-        .map(|directory| directory.join(placeholder.path()))
+        .map(|directory| directory.join(placeholder.path().str()))
         .ok_or_else(|| serde::de::Error::custom("No directory set."))
         .and_then(|path| deserializer.deserialize_with_context::<Value>(path, context))
 }
 
+/// Composes a value from multiple placeholders.
 fn compose(deserializer: &Deserializer, context: &Context, placeholder: &Placeholder) -> serde_json::Result<Value> {
-    let parts = placeholder.path().split(',').collect::<Vec<_>>();
+    let path = placeholder.path();
+    let parts = path.str().split(',').collect::<Vec<_>>();
     let mut value = Value::Object(Default::default());
     for part in parts {
         let new_value = deserializer.resolve_string(part, context)?;
