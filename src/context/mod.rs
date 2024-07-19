@@ -10,11 +10,11 @@ use crate::{Deserializer, Functions, GetDot, Placeholder, JSON};
 #[derive(Default, Clone)]
 pub struct Context {
     /// JSON data.
-    pub data: Value,
+    data: Value,
     /// Directory.
-    pub directory: Option<PathBuf>,
+    directory: Option<PathBuf>,
     /// Functions.
-    pub functions: Functions,
+    functions: Functions,
     /// JSON data being resolved.
     current: Value
 }
@@ -37,6 +37,11 @@ impl Context {
         self
     }
 
+    /// Get data.
+    pub fn data(&self) -> &Value {
+        &self.data
+    }
+
     /// Set function.
     pub fn set_function(&mut self, name: impl AsRef<str>, function: impl Fn(&Deserializer, &Context, &Placeholder) -> serde_json::Result<Value> + 'static) -> &mut Self {
         self.functions.register(name, function);
@@ -47,6 +52,11 @@ impl Context {
     pub fn with_function(mut self, name: impl AsRef<str>, function: impl Fn(&Deserializer, &Context, &Placeholder) -> serde_json::Result<Value> + 'static) -> Self {
         self.set_function(name, function);
         self
+    }
+
+    /// Get functions.
+    pub fn functions(&self) -> &Functions {
+        &self.functions
     }
 
     /// Override data.
@@ -83,6 +93,11 @@ impl Context {
     pub fn set_directory(&mut self, directory: Option<PathBuf>) -> &mut Self {
         self.directory = directory;
         self
+    }
+
+    /// Get directory.
+    pub fn directory(&self) -> Option<&PathBuf> {
+        self.directory.as_ref()
     }
 
     pub(crate) fn set_current_data(&mut self, current: Value) {

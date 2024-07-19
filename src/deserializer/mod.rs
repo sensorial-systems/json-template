@@ -25,11 +25,11 @@ impl Deserializer {
     pub fn deserialize_with_context<T: DeserializeOwned>(&self, value: impl ToDeserializable, context: &Context) -> serde_json::Result<T> {
         let mut context = context.clone();
         let (directory, value) = value.to_deserializable()?;
-        if let (Some(directory), None) = (directory, &context.directory) {
+        if let (Some(directory), None) = (directory, context.directory()) {
             context.set_directory(Some(directory));
         }
         context.set_current_data(value.clone());
-        let value = self.resolve_value(&value, &context)?;
+        let value = self.resolve_value(&value, &mut context)?;
         Ok(serde_json::from_value(serde_json::Value::from(value))?)
     }
 
@@ -81,7 +81,7 @@ impl Deserializer {
     pub fn resolve_placeholder(&self, placeholder: &Placeholder, context: &Context) -> serde_json::Result<Value> {
         let value = if let Some(type_) = placeholder.type_.as_ref() {
             context
-                .functions
+                .functions()
                 .get(type_)
                 .ok_or_else(|| serde::de::Error::custom(format!("Function not found: {:?}", placeholder)))
                 .and_then(|function| function(self, context, placeholder))
@@ -90,6 +90,7 @@ impl Deserializer {
                 .find(self, &placeholder)
         }?;
         // Resolve placeholders recursively
-        self.resolve_value(&value, context)
+        let value = self.resolve_value(&value, context)?;
+        Ok(value)
     }
 }

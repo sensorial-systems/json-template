@@ -21,7 +21,7 @@ fn string(deserializer: &Deserializer, context: &Context, placeholder: &Placehol
 /// Reads a file.
 fn file(deserializer: &Deserializer, context: &Context, placeholder: &Placeholder) -> serde_json::Result<Value> {
     context
-        .directory
+        .directory()
         .as_ref()
         .map(|directory| directory.join(placeholder.path().str()))
         .ok_or_else(|| serde::de::Error::custom("No directory set."))
