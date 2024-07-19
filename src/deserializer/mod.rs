@@ -57,29 +57,33 @@ impl Deserializer {
 
     /// Resolve a string.
     pub fn resolve_string(&self, string: &String, context: &Context) -> serde_json::Result<Value> {
-        if let Some(placeholder) = Placeholder::from_str(string) {
-            self.resolve_placeholder(&placeholder, context)
-        } else { // It's a format string.
-            let re = Regex::new(r"\{([^}]+)\}").unwrap();
-            let matches = re
-                .captures_iter(string)
-                .filter_map(|cap| cap.get(0))
-                .map(|cap| cap.as_str())
-                .filter_map(|capture| Placeholder::from_str(capture))
-                .filter_map(|placeholder| self
-                    .resolve_placeholder( &placeholder, context)
-                    .ok()
-                    .map(|value| (placeholder, value))
-                ).collect::<Vec<_>>();
-            let string = Value::String(
-                matches
-                    .iter()
-                    .fold(string.to_string(), |acc, (placeholder, value)|
-                        acc.replace(&placeholder.value, &Json::from(value.clone()).to_string())
-                    )
-            );
-            Ok(string)
+        let re = Regex::new(r"\{([^}]+)\}").unwrap();
+        let matches = re
+            .captures_iter(string)
+            .filter_map(|cap| cap.get(0))
+            .map(|cap| cap.as_str())
+            .filter_map(|capture| Placeholder::from_str(capture))
+            .filter_map(|placeholder| self
+                .resolve_placeholder( &placeholder, context)
+                .ok()
+                .map(|value| (placeholder, value))
+            ).collect::<Vec<_>>();
+
+        // This is a special case where "{placeholder}" takes the whole string, so it can b replaced by an actual Value.
+        if matches.len() == 1 {
+            if let Some(placeholder) = Placeholder::from_str(string) {
+                return self.resolve_placeholder(&placeholder, context)
+            }
         }
+
+        let string = Value::String(
+            matches
+                .iter()
+                .fold(string.to_string(), |acc, (placeholder, value)| {
+                    acc.replace(&placeholder.value, &Json::from(value.clone()).to_string())
+                })
+        );
+        Ok(string)
     }
 
     /// Resolve array.
