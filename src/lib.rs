@@ -9,7 +9,7 @@ pub mod functions;
 pub mod context;
 
 use traits::*;
-use placeholder::*;
+pub use placeholder::*;
 pub use json::*;
 pub use functions::*;
 pub use deserializer::*;

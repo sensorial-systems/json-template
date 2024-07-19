@@ -13,8 +13,7 @@ pub struct Data {
 
 #[test]
 fn from_file() {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let file = manifest_dir.join("tests").join("data-from-file.json");
+    let file = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests").join("data-from-file.json");
     let context = Context::new()
         .with_data(serde_json::json!({
             "data": {
@@ -90,4 +89,39 @@ fn custom_function() {
     });
     let data: Time = Deserializer::new().deserialize_with_context(value, &context).expect("Failed to deserialize");
     assert_eq!(data.duration, std::time::Duration::from_secs(5));
+}
+
+#[test]
+fn placeholders() {
+    let placeholder = "{time:5}";
+    let placeholder = Placeholder::from_str(placeholder).expect("Failed to create placeholder.");
+    assert_eq!(placeholder.value, "{time:5}");
+
+    let placeholders = "   {time}   {time:3}    ";
+    let placeholders = Placeholder::placeholders(placeholders);
+    assert_eq!(placeholders.len(), 2);
+    assert_eq!(placeholders[0].value, "{time}");
+    assert_eq!(placeholders[1].value, "{time:3}");
+
+    let recursive_placeholders = "{time:{time:5}}  {time}";
+    let recursive_placeholders = Placeholder::placeholders(recursive_placeholders);
+    assert_eq!(recursive_placeholders.len(), 2);
+    assert_eq!(recursive_placeholders[0].value, "{time:{time:5}}");
+    assert_eq!(recursive_placeholders[1].value, "{time}");
+}
+
+#[test]
+fn compose_function() {
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    struct Person {
+        name: String,
+        age: usize
+    }
+
+    let file = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests").join("data-composed-a-b.json");
+    let data: Person = Deserializer::new().deserialize(file).expect("Failed to deserialize.");
+    assert_eq!(data, Person {
+        name: "Danilo".into(),
+        age: 36
+    })
 }

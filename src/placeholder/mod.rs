@@ -1,9 +1,5 @@
 //! Placeholder module.
 
-use serde_json::Value;
-
-use crate::JSON;
-
 /// This struct represents a placeholder in a JSON object.
 #[derive(Debug, Clone)]
 pub struct Placeholder {
@@ -14,6 +10,39 @@ pub struct Placeholder {
 }
 
 impl Placeholder {
+    /// Get all the placeholders in a string.
+    /// If value == "{time} {time:3}", then placeholders == ["{time}", "{time:3}"].
+    /// If value == "{time:{time:5}}  {time}", then placeholders == ["{time:{time:5}}", "{time}"].
+    pub fn placeholders(value: &str) -> Vec<Self> {
+        let mut levels = 0;
+        let mut current_placeholder = String::new();
+        let mut placeholders = Vec::new();
+        for character in value.chars() {
+            match character {
+                '{' => {
+                    if levels == 0 {
+                        current_placeholder.clear();
+                    }
+                    levels += 1;
+                    current_placeholder.push(character);
+                }
+                '}' => {
+                    levels -= 1;
+                    current_placeholder.push(character);
+                    if levels == 0 {
+                        placeholders.push(Self::from_str(&current_placeholder).expect("Failed to create placeholder."));
+                    }
+                }
+                _ => {
+                    if levels > 0 {
+                        current_placeholder.push(character);
+                    }
+                }
+            }
+        }
+        placeholders
+    }
+
     /// Create a new placeholder from a string.
     pub fn from_str(value: &str) -> Option<Self> {
         if value.starts_with('{') && value.ends_with('}') {
@@ -23,11 +52,6 @@ impl Placeholder {
         } else {
             None
         }
-    }
-
-    /// Create a new placeholder from a Value.
-    pub fn from_value(value: &Value) -> Option<Self> {
-        Self::from_str(&value.to_text())
     }
 
     /// Get the path of the placeholder.

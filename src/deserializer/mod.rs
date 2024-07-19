@@ -1,6 +1,5 @@
 //! Deserializer module.
 
-use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
@@ -56,34 +55,17 @@ impl Deserializer {
     }
 
     /// Resolve a string.
-    pub fn resolve_string(&self, string: &String, context: &Context) -> serde_json::Result<Value> {
-        let re = Regex::new(r"\{([^}]+)\}").unwrap();
-        let matches = re
-            .captures_iter(string)
-            .filter_map(|cap| cap.get(0))
-            .map(|cap| cap.as_str())
-            .filter_map(|capture| Placeholder::from_str(capture))
-            .filter_map(|placeholder| self
-                .resolve_placeholder( &placeholder, context)
-                .ok()
-                .map(|value| (placeholder, value))
-            ).collect::<Vec<_>>();
-
-        // This is a special case where "{placeholder}" takes the whole string, so it can b replaced by an actual Value.
-        if matches.len() == 1 {
-            if let Some(placeholder) = Placeholder::from_str(string) {
-                return self.resolve_placeholder(&placeholder, context)
+    pub fn resolve_string(&self, string: &str, context: &Context) -> serde_json::Result<Value> {
+        let placeholders = Placeholder::placeholders(string);
+        if placeholders.len() == 1 {
+            if placeholders[0].value == string {
+                return self.resolve_placeholder(&placeholders[0], context)
             }
         }
-
-        let string = Value::String(
-            matches
-                .iter()
-                .fold(string.to_string(), |acc, (placeholder, value)| {
-                    acc.replace(&placeholder.value, &value.to_text())
-                })
-        );
-        Ok(string)
+        let string = placeholders.iter().fold(string.to_string(), |acc, placeholder| {
+            acc.replace(&placeholder.value, &self.resolve_placeholder(placeholder, context).unwrap().to_text())
+        });
+        Ok(Value::String(string))
     }
 
     /// Resolve array.

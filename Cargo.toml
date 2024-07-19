@@ -14,4 +14,3 @@ homepage = "https://sensorial.systems"
 [dependencies]
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
-regex = "1.5"
