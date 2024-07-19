@@ -51,11 +51,14 @@ Can be rendered to
 | Function | Description |
 |----------|-------------|
 | `{file:path}`|Loads a file from a relative path. Its base directory is automatically set if you deserialize a file. You can also set it manually using `Context::set_directory`.|
-|`{string:path}`| Transforms a `serde_json::Value` to `serde_json::Value::String`. It's useful if you need to deserialize a Number as a String.
+| `{string:path}`| Transforms a `serde_json::Value` to `serde_json::Value::String`. It's useful if you need to deserialize a Number as a String.
+| `{compose:{a}, {b}, ...}` | Composes N objects together. If the property doesn't exist, it will be added. If the property is an array, both arrays will be concatenated. Inputs are placeholders. |
 
 Check `Custom Functions` code example to learn how to create a custom function.
 
 ## Code examples
+
+You can always check the [tests](https://github.com/sensorial-systems/json-template/tree/main/tests) :)
 
 ### From memory
 
