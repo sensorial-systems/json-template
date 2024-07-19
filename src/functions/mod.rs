@@ -23,7 +23,7 @@ fn file(deserializer: &Deserializer, context: &Context, placeholder: &Placeholde
         .as_ref()
         .map(|directory| directory.join(placeholder.path()))
         .ok_or_else(|| serde::de::Error::custom("No directory set."))
-        .and_then(|path| deserializer.deserialize::<Value>(path))
+        .and_then(|path| deserializer.deserialize_with_context::<Value>(path, context))
 }
 
 fn compose(deserializer: &Deserializer, context: &Context, placeholder: &Placeholder) -> serde_json::Result<Value> {
