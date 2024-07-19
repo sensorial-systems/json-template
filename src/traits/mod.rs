@@ -23,7 +23,13 @@ impl GetDot for Value {
                 } else {
                     acc?.get(segment)
                         .ok_or_else(|| serde::de::Error::custom(format!("Path not found: {}", path.str())))
-                        .and_then(|value| deserializer.resolve_value(value, context))
+                        .and_then(|value| {
+                            if let Some(value) = value.as_str() {
+                                deserializer.resolve_string(value, context)
+                            } else {
+                                Ok(value.clone())
+                            }
+                        })
                 }
             })
     }

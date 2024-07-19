@@ -1,6 +1,6 @@
 [package]
 name = "json-template"
-version = "0.9.4"
+version = "0.9.5"
 edition = "2021"
 description = "A simple library for creating JSON templates."
 license = "Apache-2.0"
