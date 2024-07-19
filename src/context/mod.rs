@@ -4,13 +4,13 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 
-use crate::{Deserializer, Functions, GetDot, Json, Placeholder};
+use crate::{Deserializer, Functions, GetDot, Placeholder, JSON};
 
 /// Deserialization context.
 #[derive(Default, Clone)]
 pub struct Context {
     /// JSON data.
-    pub data: Json,
+    pub data: Value,
     /// Directory.
     pub directory: Option<PathBuf>,
     /// Functions.
@@ -57,7 +57,7 @@ impl Context {
 
     /// Override data.
     pub fn override_data(&mut self, new_value: Value) -> &mut Self {
-        Json::override_value_recursive(&mut self.data.value, new_value);
+        self.data.override_recursive(new_value);
         self
     }
 
@@ -69,7 +69,7 @@ impl Context {
 
     /// Add data.
     pub fn add_data(&mut self, new_value: Value) -> &mut Self {
-        Json::add_recursive(&mut self.data.value, new_value);
+        self.data.add_recursive(new_value);
         self
     }
 
@@ -93,7 +93,6 @@ impl Context {
     pub fn find(&self, deserializer: &Deserializer, placeholder: &Placeholder) -> serde_json::Result<Value> {
         self
             .data
-            .value
             .get_dot_deserializing(placeholder.path(), deserializer, self)
             .or_else(|_| self.current.get_dot_deserializing(placeholder.path(), deserializer, self))
     }

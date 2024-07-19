@@ -2,7 +2,7 @@
 
 use serde_json::Value;
 
-use crate::Json;
+use crate::JSON;
 
 /// This struct represents a placeholder in a JSON object.
 #[derive(Debug, Clone)]
@@ -27,7 +27,7 @@ impl Placeholder {
 
     /// Create a new placeholder from a Value.
     pub fn from_value(value: &Value) -> Option<Self> {
-        Self::from_str(&Json::from(value.clone()).to_string())
+        Self::from_str(&value.to_text())
     }
 
     /// Get the path of the placeholder.

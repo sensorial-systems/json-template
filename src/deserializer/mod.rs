@@ -4,7 +4,7 @@ use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
-use crate::{Context, Json, Placeholder, ToDeserializable};
+use crate::{Context, Placeholder, ToDeserializable, JSON};
 
 /// A template.
 #[derive(Default, Clone, Copy)]
@@ -30,7 +30,7 @@ impl Deserializer {
             context.set_directory(Some(directory));
         }
         context.set_current_data(value.clone());
-        let value = self.resolve_value(&value, &context)?; // Second pass to resolve placeholders.
+        let value = self.resolve_value(&value, &context)?;
         Ok(serde_json::from_value(serde_json::Value::from(value))?)
     }
 
@@ -80,7 +80,7 @@ impl Deserializer {
             matches
                 .iter()
                 .fold(string.to_string(), |acc, (placeholder, value)| {
-                    acc.replace(&placeholder.value, &Json::from(value.clone()).to_string())
+                    acc.replace(&placeholder.value, &value.to_text())
                 })
         );
         Ok(string)

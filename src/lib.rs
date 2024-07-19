@@ -10,7 +10,7 @@ pub mod context;
 
 use traits::*;
 use placeholder::*;
-use json::*;
+pub use json::*;
 pub use functions::*;
 pub use deserializer::*;
 pub use context::*;
